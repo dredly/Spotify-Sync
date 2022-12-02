@@ -1,6 +1,6 @@
 package controllers
 
-import com.google.common.io.BaseEncoding.base64
+import com.google.common.io.BaseEncoding.base64Url
 import configuration.ApiVariables.{CLIENT_ID, CLIENT_SECRET, REDIRECT_URI}
 import play.api.libs.json.{JsDefined, JsUndefined}
 import play.api.libs.ws._
@@ -51,47 +51,36 @@ class HomeController @Inject()(val controllerComponents: ControllerComponents, w
 
   def callback(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     val authCode = request.getQueryString("code")
-    authCode match {
-      case Some(code) =>
-        val body = Map(
-          "grant_type" -> "authorization_code",
-          "code" -> code,
-          "redirect_uri" -> REDIRECT_URI
-        )
-
-        val authString = "Basic " + base64.encode(s"client_id:$CLIENT_SECRET".getBytes)
-
-        val headers = Map(
-          "Authorization" -> authString,
-          "Content-Type" -> "application/x-www-form-urlencoded"
-        )
-
-        val response = ws.url(TOKEN_ENDPOINT)
-          .withHttpHeaders(headers.toSeq:_*)
-          .post(body)
-          .map {
-            response => response.json \ "access_token"
-          }
-
-        response.onComplete {
-          case Success(authToken) =>
-            authToken match {
-              case JsDefined(authToken) =>
-                println(s"The auth token is $authToken")
-                Ok(views.html.callback())
-              case JsUndefined() =>
-                println()
-                throw new Exception("Could not find desired JSON field")
-            }
-          case Failure(exception) =>
-            throw exception
-        }
-
-        Ok(views.html.callback())
-
-      case None =>
-        println(s"No code was returned!")
-        NotFound(views.html.callback())
+    if (authCode.isEmpty) {
+      throw new Exception("Missing query param 'code'")
     }
+    val body = Map(
+      "grant_type" -> "authorization_code",
+      "code" -> authCode.get,
+      "redirect_uri" -> REDIRECT_URI
+    )
+
+    val authString = "Basic " + base64Url.encode(s"$CLIENT_ID:$CLIENT_SECRET".getBytes)
+
+    println(s"authString = $authString")
+
+    val headers = Map(
+      "Authorization" -> authString,
+      "Content-Type" -> "application/x-www-form-urlencoded"
+    )
+
+    ws.url(TOKEN_ENDPOINT)
+      .withHttpHeaders(headers.toSeq: _*)
+      .post(body)
+      .onComplete {
+        case Success(r) =>
+          r.json \ "access_token" match {
+            // TODO: Improve error handling here to look for actual error in the JSON
+            case JsDefined(accessToken) => println(s"accessToken = ${accessToken.toString()}")
+            case JsUndefined() => throw new Exception("Could not find desired JSON field")
+          }
+        case Failure(exception) => throw exception
+      }
+    Ok(views.html.about())
   }
 }
