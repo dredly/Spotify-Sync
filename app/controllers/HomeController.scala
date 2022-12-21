@@ -1,16 +1,14 @@
 package controllers
 
 import com.google.common.io.BaseEncoding.base64Url
-import configuration.ApiVariables.{CLIENT_ID, CLIENT_SECRET, REDIRECT_URI}
+import configuration.ApiVariables.{API_BASE_URL, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI}
 import play.api.libs.json.{JsDefined, JsUndefined}
 import play.api.libs.ws._
 import play.api.mvc._
 
 import javax.inject._
 import scala.concurrent.ExecutionContext.Implicits.global
-
-
-
+import scala.util.{Failure, Success}
 
 @Singleton
 class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends AbstractController(cc) {
@@ -63,9 +61,25 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
         r => r.json \ "access_token" match {
           case JsDefined(accessToken) =>
             println(s"accessToken = ${accessToken.toString()}")
-            Ok(views.html.about())
+            Ok(views.html.index()).withSession(request.session + ("accessToken" -> accessToken.toString().init.tail))
           case JsUndefined() => throw new Exception("Could not find desired JSON field")
         }
     }
+  }
+
+  def playlists(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    request.session.get("accessToken")
+      .map { token =>
+        val futureResponse = ws.url(API_BASE_URL + "me/playlists")
+          .withHttpHeaders("Authorization" -> s"Bearer $token", "Content-Type" -> "application/json")
+          .get()
+        // Just use onComplete for now to check things work as intended
+        futureResponse.onComplete {
+          case Success(res) => println("Got response!!!" + res.json)
+          case Failure(exception) => throw exception
+        }
+        Ok(views.html.playlists())
+      }
+      .getOrElse { Unauthorized(views.html.errorPage())}
   }
 }
