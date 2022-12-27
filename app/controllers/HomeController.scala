@@ -2,7 +2,9 @@ package controllers
 
 import com.google.common.io.BaseEncoding.base64Url
 import configuration.ApiVariables.{API_BASE_URL, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI}
-import play.api.libs.json.{JsDefined, JsUndefined}
+import models.MyPlaylistsResponse
+import models.Readers.myPlaylistsResponseReads
+import play.api.libs.json.{JsDefined, JsError, JsSuccess, JsUndefined}
 import play.api.libs.ws._
 import play.api.mvc._
 
@@ -75,7 +77,13 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
           .get()
         // Just use onComplete for now to check things work as intended
         futureResponse.onComplete {
-          case Success(res) => println("Got response!!!" + res.json)
+          case Success(res) =>
+            println(res.json.toString())
+            res.json.validate[MyPlaylistsResponse] match {
+              case JsSuccess(myPlaylistsResponse, _) => println(myPlaylistsResponse.href)
+              case JsError(err) => throw new Exception(err.toString())
+            }
+            println("Got response!!!")
           case Failure(exception) => throw exception
         }
         Ok(views.html.playlists())

@@ -1,3 +1,4 @@
 package models
 
-case class Playlist(name: String, numTracks: Int)
+// Very simplified just to test JSON marshalling
+case class Playlist(name: String, uri: String)
