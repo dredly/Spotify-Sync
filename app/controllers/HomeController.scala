@@ -10,6 +10,7 @@ import play.api.mvc._
 
 import javax.inject._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 @Singleton
@@ -69,28 +70,22 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
     }
   }
 
-  def playlists(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+  def playlists(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     request.session.get("accessToken")
       .map { token =>
         val futureResponse = ws.url(API_BASE_URL + "me/playlists")
           .withHttpHeaders("Authorization" -> s"Bearer $token", "Content-Type" -> "application/json")
           .get()
         // Just use onComplete for now to check things work as intended
-        futureResponse.onComplete {
-          case Success(res) =>
-            println(res.json.toString())
-            res.json.validate[MyPlaylistsResponse] match {
-              case JsSuccess(myPlaylistsResponse, _) =>
-                val firstPlaylist = myPlaylistsResponse.items.head
-                println(s"Link to tracks of first playlist: ${firstPlaylist.tracksLink}")
-                println(myPlaylistsResponse.href)
-              case JsError(err) => throw new Exception(err.toString())
-            }
-            println("Got response!!!")
-          case Failure(exception) => throw exception
+        futureResponse.map{
+          r => r.json.validate[MyPlaylistsResponse] match {
+            case JsSuccess(myPlaylistsResponse, _) =>
+              val playlists = myPlaylistsResponse.items
+              Ok(views.html.playlists())
+            case JsError(err) => throw new Exception(err.toString())
+          }
         }
-        Ok(views.html.playlists())
       }
-      .getOrElse { Unauthorized(views.html.errorPage())}
+      .getOrElse { Future(Unauthorized(views.html.errorPage()))}
   }
 }
