@@ -81,7 +81,7 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
           r => r.json.validate[MyPlaylistsResponse] match {
             case JsSuccess(myPlaylistsResponse, _) =>
               val playlists = myPlaylistsResponse.items
-              Ok(views.html.playlists())
+              Ok(views.html.playlists(playlists))
             case JsError(err) => throw new Exception(err.toString())
           }
         }

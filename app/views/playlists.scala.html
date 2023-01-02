@@ -1,5 +1,10 @@
-@()
+@(playlists: Array[Playlist])
 
 @main("Spotify-Sync") {
     <h1>Playlists</h1>
+    <ul>
+        @for(playlist <- playlists) {
+            <li>@playlist.name</li>
+        }
+    </ul>
 }
