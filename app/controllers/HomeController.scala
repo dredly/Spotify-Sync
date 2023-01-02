@@ -80,7 +80,10 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
           case Success(res) =>
             println(res.json.toString())
             res.json.validate[MyPlaylistsResponse] match {
-              case JsSuccess(myPlaylistsResponse, _) => println(myPlaylistsResponse.href)
+              case JsSuccess(myPlaylistsResponse, _) =>
+                val firstPlaylist = myPlaylistsResponse.items.head
+                println(s"Link to tracks of first playlist: ${firstPlaylist.tracksLink}")
+                println(myPlaylistsResponse.href)
               case JsError(err) => throw new Exception(err.toString())
             }
             println("Got response!!!")
