@@ -2,6 +2,7 @@ package controllers
 
 import com.google.common.io.BaseEncoding.base64Url
 import configuration.ApiVariables.{API_BASE_URL, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI}
+import forms.PlaylistIdForm.PlaylistIdFormData
 import models.MyPlaylistsResponse
 import models.Readers.myPlaylistsResponseReads
 import play.api.libs.json.{JsDefined, JsError, JsSuccess, JsUndefined}
@@ -11,7 +12,6 @@ import play.api.mvc._
 import javax.inject._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 @Singleton
 class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends AbstractController(cc) {
@@ -87,5 +87,13 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
         }
       }
       .getOrElse { Future(Unauthorized(views.html.errorPage()))}
+  }
+
+  def syncSelectForm(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Ok(views.html.playlistIdForm(PlaylistIdFormData.form))
+  }
+
+  def syncSelect(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    Ok(views.html.index())
   }
 }

@@ -2,9 +2,12 @@
 
 @main("Spotify-Sync") {
     <h1>Playlists</h1>
-    <ul>
+    <p>First select one of your own playlists to sync with</p>
+    <div>
         @for(playlist <- playlists) {
-            <li>@playlist.name</li>
+            <div>
+                <button>@playlist.name</button>
+            </div>
         }
-    </ul>
+    </div>
 }

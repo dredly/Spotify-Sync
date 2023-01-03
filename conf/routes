@@ -9,6 +9,8 @@ GET     /about                      controllers.HomeController.about()
 GET     /login                      controllers.HomeController.login()
 GET     /callback                   controllers.HomeController.callback()
 GET     /playlists                  controllers.HomeController.playlists()
+GET     /sync-select                controllers.HomeController.syncSelectForm()
+POST    /sync-select                controllers.HomeController.syncSelect()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
