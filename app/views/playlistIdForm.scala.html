@@ -1,9 +1,11 @@
+@(playlistIdForm: Form[String])(implicit message: Messages, request: RequestHeader)
 @import helper._
-@(playlistIdForm: Form[PlaylistIdFormData])(implicit messages: Messages)
 
 @main("Welcome to Play") {
 <h1>Enter the id of a playlist you wish to sync to</h1>
-<p>
-    Yo
-</p>
+@form(action = routes.HomeController.syncSelect()) {
+    @CSRF.formField
+    @inputText(playlistIdForm("playlistId"))
+    <input type="submit" value="Submit">
+}
 }

@@ -2,9 +2,10 @@ package controllers
 
 import com.google.common.io.BaseEncoding.base64Url
 import configuration.ApiVariables.{API_BASE_URL, CLIENT_ID, CLIENT_SECRET, REDIRECT_URI}
-import forms.PlaylistIdForm.PlaylistIdFormData
 import models.MyPlaylistsResponse
 import models.Readers.myPlaylistsResponseReads
+import play.api.data.Form
+import play.api.data.Forms.{mapping, nonEmptyText, single, text}
 import play.api.libs.json.{JsDefined, JsError, JsSuccess, JsUndefined}
 import play.api.libs.ws._
 import play.api.mvc._
@@ -14,10 +15,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
-class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends AbstractController(cc) {
+class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends AbstractController(cc) with play.api.i18n.I18nSupport {
 
   val AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
   val TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token"
+
+  val playlistIdForm: Form[String] = Form(
+    single(
+      "playlistId" -> nonEmptyText,
+    )
+  )
+
   def index(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
     Ok(views.html.index())
   }
@@ -76,7 +84,7 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
         val futureResponse = ws.url(API_BASE_URL + "me/playlists")
           .withHttpHeaders("Authorization" -> s"Bearer $token", "Content-Type" -> "application/json")
           .get()
-        // Just use onComplete for now to check things work as intended
+
         futureResponse.map{
           r => r.json.validate[MyPlaylistsResponse] match {
             case JsSuccess(myPlaylistsResponse, _) =>
@@ -90,10 +98,12 @@ class HomeController @Inject()(cc: ControllerComponents, ws: WSClient) extends A
   }
 
   def syncSelectForm(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
-    Ok(views.html.playlistIdForm(PlaylistIdFormData.form))
+    Ok(views.html.playlistIdForm(playlistIdForm))
   }
 
   def syncSelect(): Action[AnyContent] = Action { implicit request: Request[AnyContent] =>
+    val syncToPlaylistId = playlistIdForm.bindFromRequest.get
+    println(s"sync to $syncToPlaylistId")
     Ok(views.html.index())
   }
 }
